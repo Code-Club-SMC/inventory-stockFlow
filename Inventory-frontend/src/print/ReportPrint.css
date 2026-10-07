@@ -1,0 +1,153 @@
+/* Hidden on screen. Only the print media block below shows it. */
+.report-print {
+    display: none;
+}
+
+@media print {
+    @page {
+        size: A4;
+        margin: 14mm 14mm 16mm;
+
+        @bottom-right {
+            content: 'Page ' counter(page) ' of ' counter(pages);
+            font-size: 9pt;
+            color: #555;
+        }
+    }
+
+    /* Hide the whole app while the Reports page is open. The class is set by Reports.jsx. */
+     body > #root {
+        display: none !important;
+    }
+
+    body {
+        margin: 0 !important;
+        background: white !important;
+    }
+
+    .report-print {
+        display: block !important;
+        background: white;
+        color: black;
+        font-size: 10pt;
+        line-height: 1.4;
+    }
+
+    body.printing-report {
+        background: #fff !important;
+    }
+
+    .report-print {
+        display: block;
+        background: #fff;
+        color: #000;
+        font-size: 10pt;
+        line-height: 1.4;
+    }
+
+    .report-print .rp-muted {
+        color: #555;
+        font-size: 9pt;
+    }
+
+    .report-print .rp-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12mm;
+    }
+
+    .report-print h1 {
+        font-size: 18pt;
+        font-weight: 500;
+        margin: 0;
+    }
+
+    .report-print h3 {
+        font-size: 11pt;
+        font-weight: 500;
+        margin: 7mm 0 2mm;
+        break-after: avoid;
+    }
+
+    .report-print .rp-meta {
+        text-align: right;
+    }
+
+    .report-print .rp-summary {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        margin-top: 5mm;
+        border-top: 0.5pt solid #000;
+        border-bottom: 0.5pt solid #000;
+    }
+
+    .report-print .rp-summary > div {
+        padding: 2mm 3mm;
+        border-right: 0.5pt solid #ccc;
+    }
+
+    .report-print .rp-summary > div:last-child {
+        border-right: none;
+    }
+
+    .report-print .rp-summary span {
+        display: block;
+    }
+
+    .report-print .rp-summary b {
+        font-size: 13pt;
+        font-weight: 500;
+    }
+
+    .report-print table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    /* Repeat the column headings on every page. */
+    .report-print thead {
+        display: table-header-group;
+    }
+
+    .report-print tr {
+        break-inside: avoid;
+    }
+
+    .report-print th {
+        text-align: left;
+        font-weight: 500;
+        font-size: 9pt;
+        color: #555;
+        padding: 1.5mm 1mm;
+        border-bottom: 0.5pt solid #000;
+    }
+
+    .report-print td {
+        padding: 1.5mm 1mm;
+        border-bottom: 0.5pt solid #ddd;
+        font-size: 9.5pt;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .report-print .r {
+        text-align: right;
+    }
+
+    .report-print .rp-total td {
+        font-weight: 500;
+        border-top: 0.5pt solid #000;
+        border-bottom: none;
+    }
+
+    /* Browsers drop background colors when printing unless told otherwise. */
+    .report-print .rp-bar {
+        height: 2.5mm;
+        background: #555;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

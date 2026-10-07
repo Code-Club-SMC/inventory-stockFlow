@@ -1,0 +1,56 @@
+.print-invoice-container {
+    display: none;
+}
+
+@media print {
+    @page {
+        size: A4;
+        margin: 10mm;
+    }
+
+    html,
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        /* keep backgrounds (table header, total bar, badge) when printing */
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body > #root {
+        display: none !important;
+    }
+
+    .print-invoice-container {
+        display: block !important;
+        width: 100%;
+        background: #fff !important;
+    }
+
+    .invoice-print {
+        display: block !important;
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 6mm 8mm;
+        background: #fff !important;
+        /* no forced color here, so the navy palette from the component is kept */
+        font-size: 10pt;
+        line-height: 1.4;
+    }
+
+    .invoice-print * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .invoice-print table {
+        border-collapse: collapse;
+    }
+
+    .invoice-print tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+}
