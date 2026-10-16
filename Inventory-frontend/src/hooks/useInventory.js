@@ -10,6 +10,7 @@ const transactionsKey = ['transactions'];
 // Dashboard and Reports are built from stock, so they refresh too.
 const dashboardKey = ['dashboard'];
 const reportsKey = ['reports'];
+const walletKey = ['wallet'];
 
 /** List of all stock entries. Stock changes from several places, so keep the default 30s. */
 export function useInventory() {
@@ -35,6 +36,7 @@ function useRefreshStock() {
         qc.invalidateQueries({ queryKey: transactionsKey });
         qc.invalidateQueries({ queryKey: dashboardKey });
         qc.invalidateQueries({ queryKey: reportsKey });
+        qc.invalidateQueries({ queryKey: walletKey });
     };
 }
 

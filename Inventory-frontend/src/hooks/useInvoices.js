@@ -8,6 +8,10 @@ const invoiceKey = (id) => ['invoices', id];
 // ['inventory'] also covers ['inventory', 'summary'].
 const inventoryKey = ['inventory'];
 const transactionsKey = ['transactions'];
+// Dashboard and Reports show revenue and balances, so they refresh too.
+const dashboardKey = ['dashboard'];
+const reportsKey = ['reports'];
+const walletKey = ['wallet'];
 
 /** List of all invoices. */
 export function useInvoices() {
@@ -32,6 +36,9 @@ function useRefreshStock() {
     return () => {
         qc.invalidateQueries({ queryKey: inventoryKey });
         qc.invalidateQueries({ queryKey: transactionsKey });
+        qc.invalidateQueries({ queryKey: dashboardKey });
+        qc.invalidateQueries({ queryKey: reportsKey });
+        qc.invalidateQueries({ queryKey: walletKey });
     };
 }
 
@@ -88,6 +95,9 @@ export function useAddPayment() {
         onSuccess: (_result, { id }) => {
             qc.invalidateQueries({ queryKey: invoicesKey });
             qc.invalidateQueries({ queryKey: invoiceKey(id) });
+            qc.invalidateQueries({ queryKey: dashboardKey });
+            qc.invalidateQueries({ queryKey: reportsKey });
+            qc.invalidateQueries({ queryKey: walletKey });
             showToast('Payment recorded successfully');
         },
     });
@@ -102,6 +112,9 @@ export function useRemovePayment() {
         onSuccess: (_result, { id }) => {
             qc.invalidateQueries({ queryKey: invoicesKey });
             qc.invalidateQueries({ queryKey: invoiceKey(id) });
+            qc.invalidateQueries({ queryKey: dashboardKey });
+            qc.invalidateQueries({ queryKey: reportsKey });
+            qc.invalidateQueries({ queryKey: walletKey });
             showToast('Payment removed', 'info');
         },
     });

@@ -7,6 +7,7 @@ export const MODULES = [
   "inventory",
   "transactions",
   "invoices",
+  "wallet",
   "reports",
   "roles", // controls access to the Roles & Permissions screen itself
   "users",
@@ -24,6 +25,8 @@ export const MODULE_LABELS = {
   inventory: "Inventory",
   transactions: "Stock Transactions",
   invoices: "Invoices",
+  
+  wallet: "Wallet",
   reports: "Reports",
   roles: "Roles & Permissions",
   users: "User Management",

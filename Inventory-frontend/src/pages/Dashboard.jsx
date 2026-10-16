@@ -2,6 +2,7 @@ import {
     ArrowDownCircle,
     ArrowUpCircle,
     Wallet,
+    DollarSign,
     AlertTriangle,
     Boxes,
     Receipt,
@@ -51,6 +52,16 @@ export default function Dashboard({ onNavigate }) {
     } = data;
 
     const stats = [
+        ...(totals.walletBalance != null
+    ? [{
+        label: 'Wallet Balance',
+        value: formatCurrency(totals.walletBalance),
+        icon: Wallet,
+        iconBg: 'bg-teal-100',
+        iconColor: 'text-teal-600',
+        valueClass: totals.walletBalance < 0 ? 'text-rose-700' : 'text-slate-800',
+    }]
+    : []),
         {
             label: 'Outstanding Balance',
             value: formatCurrency(totals.outstandingBalance),
@@ -82,7 +93,7 @@ export default function Dashboard({ onNavigate }) {
         {
             label: 'Total Revenue',
             value: formatCurrency(totals.totalRevenue),
-            icon: Wallet,
+            icon: DollarSign,
             iconBg: 'bg-violet-100',
             iconColor: 'text-violet-600',
         },
@@ -135,8 +146,7 @@ export default function Dashboard({ onNavigate }) {
                             title="Dashboard"
                             subtitle="Overview of your inventory"
                         />
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
-                {stats.map((stat) => {
+            <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 ${stats.length > 5 ? 'xl:grid-cols-6' : 'xl:grid-cols-5'}`}>  {stats.map((stat) => {
                     const Icon = stat.icon;
                     return (
                         <Card className="p-5 hover:shadow-md transition-shadow" key={stat.label}>
@@ -145,8 +155,7 @@ export default function Dashboard({ onNavigate }) {
                                     <Icon className={stat.iconColor} size={22} />
                                 </div>
                             </div>
-                            <p className="text-2xl font-bold text-slate-800 mb-0.5">{stat.value}</p>
-                            <p className="text-xs text-slate-500 font-medium">{stat.label}</p>
+                           <p className={`text-2xl font-bold mb-0.5 ${stat.valueClass ?? 'text-slate-800'}`}>{stat.value}</p><p className="text-xs text-slate-500 font-medium">{stat.label}</p>
                         </Card>
                     );
                 })}

@@ -9,6 +9,7 @@ import {
   getTodayISO,
 } from '../validations/invoice.js';
 import { StockError, applyInvoiceStock, releaseInvoiceStock } from '../utils/stock.js';
+import { recordWalletEntry } from '../utils/wallet.js';
 
 /* -------------------------------------------------------------------------- */
 /*  Helpers                                                                   */
@@ -116,6 +117,25 @@ export async function createInvoice(req, res) {
         );
 
         await applyInvoiceStock(created, session); // throws StockError if short
+
+        // A payment taken while creating the invoice is money in right now.
+        if (payment) {
+          const first = created.payments[0];
+          await recordWalletEntry({
+            session,
+            direction: 'in',
+            type: 'Invoice Payment',
+            amount: first.amount,
+            date: first.date,
+            description: `${created.customer} (${first.method.toLowerCase()})`,
+            reference: created.invoiceNumber,
+            invoice: created._id,
+            paymentId: String(first._id),
+            method: first.method,
+            createdBy: req.user?._id,
+          });
+        }
+
         invoice = created;
       });
     } finally {
@@ -226,50 +246,134 @@ export async function deleteInvoice(req, res) {
 }
 
 // POST /invoices/:id/payments
+// The payment and the wallet entry are saved together.
 export async function addPayment(req, res) {
   try {
-    const invoice = await Invoice.findById(req.params.id);
-    if (!invoice) return fail(res, 404, 'Invoice not found');
+    const session = await mongoose.startSession();
+    let failure = null;
+    let saved = null;
 
-    // The rules depend on the invoice's current balance, so the schema is built per request.
-    const schema = buildAddPaymentSchema({
-      total: invoice.total,
-      amountPaid: invoice.amountPaid,
-      date: invoice.date,
-    });
-    const parsed = schema.safeParse(req.body);
-    if (!parsed.success) return zodFail(res, parsed.error);
+    try {
+      await session.withTransaction(async () => {
+        failure = null;
+        saved = null;
 
-    invoice.addPayment(parsed.data);
-    await invoice.save(); // VersionError here = someone else paid at the same moment
-    res.status(201).json({ success: true, message: 'Payment recorded successfully', data: invoice });
+        const invoice = await Invoice.findById(req.params.id).session(session);
+        if (!invoice) {
+          failure = { status: 404, message: 'Invoice not found' };
+          return;
+        }
+
+        // The rules depend on the invoice's current balance, so the schema is built per request.
+        const schema = buildAddPaymentSchema({
+          total: invoice.total,
+          amountPaid: invoice.amountPaid,
+          date: invoice.date,
+        });
+        const parsed = schema.safeParse(req.body);
+        if (!parsed.success) {
+          failure = { zod: parsed.error };
+          return;
+        }
+
+        invoice.addPayment(parsed.data);
+        await invoice.save({ session }); // VersionError = someone else paid at the same moment
+
+        const added = invoice.payments[invoice.payments.length - 1];
+        await recordWalletEntry({
+          session,
+          direction: 'in',
+          type: 'Invoice Payment',
+          amount: added.amount,
+          date: added.date,
+          description: `${invoice.customer} (${added.method.toLowerCase()})`,
+          reference: invoice.invoiceNumber,
+          invoice: invoice._id,
+          paymentId: String(added._id),
+          method: added.method,
+          createdBy: req.user?._id,
+        });
+
+        saved = invoice;
+      });
+    } finally {
+      await session.endSession();
+    }
+
+    if (failure?.zod) return zodFail(res, failure.zod);
+    if (failure) return fail(res, failure.status, failure.message);
+    res.status(201).json({ success: true, message: 'Payment recorded successfully', data: saved });
   } catch (error) {
     handleError(res, error);
   }
 }
 
 // DELETE /invoices/:id/payments/:paymentId   (optional body: { dueDate })
+// Undoing a payment takes the money back out of the wallet, as a new entry.
 export async function removePayment(req, res) {
   try {
     const parsed = removePaymentSchema.safeParse(req.body ?? {});
     if (!parsed.success) return zodFail(res, parsed.error);
-
-    const invoice = await Invoice.findById(req.params.id);
-    if (!invoice) return fail(res, 404, 'Invoice not found');
-
     const { dueDate } = parsed.data;
-    if (dueDate && dueDate < invoice.date) {
-      return fail(res, 400, 'Due date cannot be before the invoice date', {
-        errors: { formErrors: [], fieldErrors: { dueDate: ['Due date cannot be before the invoice date'] } },
+
+    const session = await mongoose.startSession();
+    let failure = null;
+    let saved = null;
+
+    try {
+      await session.withTransaction(async () => {
+        failure = null;
+        saved = null;
+
+        const invoice = await Invoice.findById(req.params.id).session(session);
+        if (!invoice) {
+          failure = { status: 404, message: 'Invoice not found' };
+          return;
+        }
+
+        if (dueDate && dueDate < invoice.date) {
+          failure = {
+            status: 400,
+            message: 'Due date cannot be before the invoice date',
+            extra: { errors: { formErrors: [], fieldErrors: { dueDate: ['Due date cannot be before the invoice date'] } } },
+          };
+          return;
+        }
+
+        const payment = invoice.payments.id(req.params.paymentId);
+        if (!payment) {
+          failure = { status: 404, message: 'Payment not found' };
+          return;
+        }
+        const amount = payment.amount;
+        const method = payment.method;
+
+        invoice.removePayment(req.params.paymentId, dueDate);
+        // If the invoice becomes unpaid with no due date, the model rejects it (400, field: dueDate).
+        await invoice.save({ session });
+
+        await recordWalletEntry({
+          session,
+          direction: 'out',
+          type: 'Payment Reversed',
+          amount,
+          date: getTodayISO(),
+          description: `Payment undone: ${invoice.customer}`,
+          reference: invoice.invoiceNumber,
+          invoice: invoice._id,
+          paymentId: String(req.params.paymentId),
+          method,
+          createdBy: req.user?._id,
+        });
+
+        saved = invoice;
       });
+    } finally {
+      await session.endSession();
     }
 
-    if (!invoice.removePayment(req.params.paymentId, dueDate)) {
-      return fail(res, 404, 'Payment not found');
-    }
-    // If the invoice becomes unpaid with no due date, the model rejects it (400, field: dueDate).
-    await invoice.save();
-    res.json({ success: true, message: 'Payment removed successfully', data: invoice });
+    if (failure) return fail(res, failure.status, failure.message, failure.extra);
+    res.json({ success: true, message: 'Payment removed successfully', data: saved });
   } catch (error) {
     handleError(res, error);
   }

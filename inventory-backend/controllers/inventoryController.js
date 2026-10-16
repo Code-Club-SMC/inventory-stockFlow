@@ -3,6 +3,8 @@ import InventoryItem from "../models/InventoryItem.js";
 import Transaction from "../models/Transaction.js";
 import Category from "../models/Category.js";
 import { nextReference } from "../utils/reference.js";
+import { recordWalletEntry } from "../utils/wallet.js";
+import { getTodayISO } from "../validations/invoice.js";
 
 const CASE_INSENSITIVE = { locale: "en", strength: 2 };
 
@@ -125,6 +127,19 @@ export const createInventoryItem = async (req, res) => {
           { session }
         );
 
+        // Buying stock takes its total cost out of the wallet.
+        await recordWalletEntry({
+          session,
+          direction: "out",
+          type: "Stock Purchase",
+          amount: round2(quantity * stockInPrice),
+          date,
+          description: `${cat.name}, ${quantity} ${unit} at ${stockInPrice}`,
+          reference,
+          inventoryItem: created._id,
+          createdBy: req.user?._id,
+        });
+
         item = created;
       });
     } finally {
@@ -189,6 +204,7 @@ export const updateInventoryItem = async (req, res) => {
           return;
         }
 
+        const oldTotal = round2(item.quantity * item.stockInPrice);
         item.quantity = quantity;
         item.currentStock = round2(quantity - sold);
         item.unit = unit;
@@ -196,6 +212,26 @@ export const updateInventoryItem = async (req, res) => {
         item.date = date;
         item.description = description;
         saved = await item.save({ session });
+
+        // A changed quantity or price changes what the purchase cost.
+        const ledger = await Transaction.findOne({
+          inventoryItem: item._id,
+          type: "Stock In",
+        }).session(session);
+        const diff = round2(round2(quantity * stockInPrice) - oldTotal);
+        if (diff !== 0) {
+          await recordWalletEntry({
+            session,
+            direction: diff > 0 ? "out" : "in",
+            type: "Purchase Adjusted",
+            amount: Math.abs(diff),
+            date,
+            description: `${item.category} stock entry edited`,
+            reference: ledger?.reference ?? "",
+            inventoryItem: item._id,
+            createdBy: req.user?._id,
+          });
+        }
 
         // Keep the ledger row in step with the batch.
         await Transaction.updateOne(
@@ -255,6 +291,23 @@ export const deleteInventoryItem = async (req, res) => {
           ];
           return;
         }
+
+        // Nothing was sold, so the whole purchase cost comes back.
+        const ledger = await Transaction.findOne({
+          inventoryItem: item._id,
+          type: "Stock In",
+        }).session(session);
+        await recordWalletEntry({
+          session,
+          direction: "in",
+          type: "Purchase Refund",
+          amount: round2(item.quantity * item.stockInPrice),
+          date: getTodayISO(),
+          description: `${item.category} stock entry deleted`,
+          reference: ledger?.reference ?? "",
+          inventoryItem: item._id,
+          createdBy: req.user?._id,
+        });
 
         await Transaction.deleteMany({ inventoryItem: item._id }, { session });
         await InventoryItem.deleteOne({ _id: item._id }, { session });

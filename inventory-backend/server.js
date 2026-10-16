@@ -13,6 +13,7 @@ import inventoryRoutes from './routes/inventoryRoutes.js'
 import transactionRoutes from './routes/transactionRoutes.js'
 import dashboardRoutes from './routes/dashboardRoutes.js'
 import reportRoutes from './routes/reportRoutes.js'
+import walletRoutes from './routes/walletRoutes.js'
 import dns from "node:dns";
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 const app = express();
@@ -30,6 +31,7 @@ app.use("/api/inventory",inventoryRoutes)
 app.use("/api/transactions", transactionRoutes)
 app.use("/api/dashboard", dashboardRoutes)
 app.use("/api/reports", reportRoutes)
+app.use("/api/wallet", walletRoutes)
 app.listen(PORT, () => {
 	console.log(`Server running on port ${PORT}`);
 });

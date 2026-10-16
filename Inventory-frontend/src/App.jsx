@@ -19,6 +19,7 @@ import Reports from '@/pages/Reports';
 import LoginForm from '@/pages/Login';
 import Roles from '@/pages/Roles';
 import UserManagement from '@/pages/UserManagement';
+import Wallet from '@/pages/Wallet';
 
 function AppContent() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -40,6 +41,7 @@ function AppContent() {
         { module: 'inventory', element: <Inventory /> },
         { module: 'transactions', element: <StockTransactions /> },
         { module: 'invoices', element: <Invoices /> },
+        { module: 'wallet', element: <Wallet /> },
         { module: 'reports', element: <Reports /> },
         { module: 'roles', element: <Roles /> },
         { module: 'users', element: <UserManagement /> },

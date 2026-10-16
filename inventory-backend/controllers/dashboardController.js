@@ -1,5 +1,7 @@
 import Transaction from "../models/Transaction.js";
 import { Invoice } from "../models/Invoice.js";
+import Wallet, { MAIN_WALLET } from "../models/Wallet.js";
+import { hasPermission } from "../middleware/requirePermission.js";
 import { LOW_STOCK_LIMIT } from "../validations/inventorySchema.js";
 import {
   round2,
@@ -28,6 +30,12 @@ export const getDashboard = async (req, res) => {
           .lean(),
       ]);
 
+    // The balance is only included for roles that can view the wallet.
+    const wallet = hasPermission(req.user, "wallet", "view")
+      ? await Wallet.findOne({ key: MAIN_WALLET }).lean()
+      : undefined;
+    const walletBalance = wallet === undefined ? null : round2(wallet?.balance);
+
     const currentStock = round2(
       stockByCategory.reduce((sum, c) => sum + c.currentStock, 0)
     );
@@ -41,6 +49,7 @@ export const getDashboard = async (req, res) => {
           currentStock,
           totalRevenue: invoiceTotals.revenue, // billed
           outstandingBalance: invoiceTotals.outstanding,
+          walletBalance, // null when the role can't view the wallet
         },
         stockByCategory,
         lowStock: stockByCategory.filter((c) => c.currentStock < LOW_STOCK_LIMIT),

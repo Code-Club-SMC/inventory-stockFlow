@@ -7,7 +7,8 @@ import {
     BarChart3,
     Lock,
     UserCheck,
-    Settings,
+    // Settings,
+    Wallet,
 } from 'lucide-react';
 
 // `key` is both the URL (/key) and the permission module name.
@@ -17,6 +18,7 @@ export const navItems = [
     { key: 'inventory', label: 'Inventory', icon: Boxes },
     { key: 'transactions', label: 'Stock Transactions', icon: ArrowLeftRight },
     { key: 'invoices', label: 'Invoices', icon: FileText },
+    { key: 'wallet', label: 'Wallet', icon: Wallet },
     { key: 'reports', label: 'Reports', icon: BarChart3 },
     { key: 'roles', label: 'Roles & Permissions', icon: Lock },
     { key: 'users', label: 'User Management', icon: UserCheck },
