@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { PAYMENT_METHODS } from "../validations/invoice.js";
 
 const inventorySchema = new mongoose.Schema(
   {
@@ -9,6 +10,8 @@ const inventorySchema = new mongoose.Schema(
     totalPrice: { type: Number, required: true, min: 0 },
     date: { type: String, required: true }, // YYYY-MM-DD
     description: { type: String, default: "", trim: true },
+    paymentMethod: { type: String, enum: ["", ...PAYMENT_METHODS], default: "" },
+    transactionNumber: { type: String, default: "", trim: true, maxlength: 60 },
     currentStock: { type: Number, required: true, min: 0 },
   },
   { timestamps: true }

@@ -26,7 +26,8 @@ const walletEntrySchema = new mongoose.Schema(
     inventoryItem: { type: mongoose.Schema.Types.ObjectId, ref: "InventoryItem" },
     invoice: { type: mongoose.Schema.Types.ObjectId, ref: "Invoice" },
     paymentId: { type: String, default: "" },
-    method: { type: String, default: "" }, // Cash / Bank / Cheque for invoice payments
+    method: { type: String, default: "" }, // Blank for legacy or non-payment entries
+    transactionNumber: { type: String, default: "", trim: true, maxlength: 60 },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }

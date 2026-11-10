@@ -64,7 +64,6 @@ const getDefaultPayment = () => ({
     date: getTodayISO(),
     method: 'Cash',
     transactionNumber: '',
-    chequeNumber: '',
 });
 
 const getDefaultValues = () => ({
@@ -132,7 +131,6 @@ const getDefaultPayForm = () => ({
     date: getTodayISO(),
     method: 'Cash',
     transactionNumber: '',
-    chequeNumber: '',
     nextDueDate: '',
 });
 
@@ -847,32 +845,17 @@ const categoryOptions= categories.filter((c) => c.status === 'Active').map((c) =
                                         />
                                     )}
                                 />
-                                {paymentMethod === 'Bank' && (
+                                {['Bank', 'Online', 'Card'].includes(paymentMethod) && (
                                     <Controller
                                         name="payment.transactionNumber"
                                         control={control}
                                         render={({ field: { ref, ...field } }) => (
                                             <Input
-                                                label="Transaction Number"
-                                                required
-                                                placeholder="Bank transaction reference"
+                                                label="Reference Number"
+                                                required={paymentMethod !== 'Card'}
+                                                placeholder={paymentMethod === 'Card' ? 'Optional card receipt reference' : 'Payment reference number'}
                                                 {...field}
                                                 error={errors.payment?.transactionNumber?.message}
-                                            />
-                                        )}
-                                    />
-                                )}
-                                {paymentMethod === 'Cheque' && (
-                                    <Controller
-                                        name="payment.chequeNumber"
-                                        control={control}
-                                        render={({ field: { ref, ...field } }) => (
-                                            <Input
-                                                label="Cheque Number"
-                                                required
-                                                placeholder="Cheque number"
-                                                {...field}
-                                                error={errors.payment?.chequeNumber?.message}
                                             />
                                         )}
                                     />
@@ -1037,7 +1020,7 @@ const categoryOptions= categories.filter((c) => c.status === 'Active').map((c) =
                                                 <td className="px-4 py-2.5 text-sm text-slate-600">{formatDate(p.date)}</td>
                                                 <td className="px-4 py-2.5 text-sm font-semibold text-slate-700">{p.method}</td>
                                                 <td className="px-4 py-2.5 text-sm text-slate-600">
-                                                    {p.transactionNumber || p.chequeNumber || '—'}
+                                                    {p.transactionNumber || '—'}
                                                 </td>
                                                 <td className="px-4 py-2.5 text-sm font-bold text-slate-800 text-right">{formatCurrency(p.amount)}</td>
                                                 <td className="px-2 py-2.5 text-right print:hidden">
@@ -1146,32 +1129,17 @@ const categoryOptions= categories.filter((c) => c.status === 'Active').map((c) =
                                     />
                                 )}
                             />
-                            {payMethod === 'Bank' && (
+                            {['Bank', 'Online', 'Card'].includes(payMethod) && (
                                 <Controller
                                     name="transactionNumber"
                                     control={payControl}
                                     render={({ field: { ref, ...field } }) => (
                                         <Input
-                                            label="Transaction Number"
-                                            required
-                                            placeholder="Bank transaction reference"
+                                            label="Reference Number"
+                                            required={payMethod !== 'Card'}
+                                            placeholder={payMethod === 'Card' ? 'Optional card receipt reference' : 'Payment reference number'}
                                             {...field}
                                             error={payErrors.transactionNumber?.message}
-                                        />
-                                    )}
-                                />
-                            )}
-                            {payMethod === 'Cheque' && (
-                                <Controller
-                                    name="chequeNumber"
-                                    control={payControl}
-                                    render={({ field: { ref, ...field } }) => (
-                                        <Input
-                                            label="Cheque Number"
-                                            required
-                                            placeholder="Cheque number"
-                                            {...field}
-                                            error={payErrors.chequeNumber?.message}
                                         />
                                     )}
                                 />

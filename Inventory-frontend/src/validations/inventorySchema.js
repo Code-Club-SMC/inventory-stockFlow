@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PAYMENT_METHODS } from "./invoice.js";
 
 // Stock below this amount is shown as "low" on the Inventory page.
 export const LOW_STOCK_LIMIT = 50;
@@ -50,4 +51,20 @@ export const inventoryFormSchema = z.object({
     .trim()
     .max(200, "Keep the description under 200 characters.")
     .default(""),
+
+  paymentMethod: z.union([z.enum(PAYMENT_METHODS), z.literal("")]).default("Cash"),
+  transactionNumber: z.string().trim().max(60, "Reference number is too long.").default(""),
 });
+
+const checkPurchasePayment = (value, ctx) => {
+  if (["Bank", "Online"].includes(value.paymentMethod) && !value.transactionNumber) {
+    ctx.addIssue({ code: "custom", path: ["transactionNumber"], message: "Reference number is required for " + value.paymentMethod + " payments." });
+  }
+};
+
+export const inventoryCreateSchema = inventoryFormSchema.superRefine((value, ctx) => {
+  if (!value.paymentMethod) ctx.addIssue({ code: "custom", path: ["paymentMethod"], message: "Select a payment method." });
+  checkPurchasePayment(value, ctx);
+});
+
+export const inventoryUpdateSchema = inventoryFormSchema.superRefine(checkPurchasePayment);

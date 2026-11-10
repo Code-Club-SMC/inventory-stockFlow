@@ -12,7 +12,7 @@ export const INVOICE_STATUSES = ['Pending', 'Partial', 'Paid'];
 /** Filter options for the list: stored statuses + the derived Overdue. */
 export const INVOICE_STATUS_FILTERS = [...INVOICE_STATUSES, 'Overdue'];
 
-export const PAYMENT_METHODS = ['Cash', 'Bank', 'Cheque'];
+export const PAYMENT_METHODS = ['Cash', 'Bank', 'Online', 'Card'];
 
 /* -------------------------------------------------------------------------- */
 /*  Helpers                                                                   */
@@ -83,8 +83,7 @@ export const isOverdue = ({ status, dueDate }, today = getTodayISO()) =>
 /** Clear the reference number that does not apply to the chosen method. */
 export const normalizePayment = (p) => ({
   ...p,
-  transactionNumber: p.method === 'Bank' ? (p.transactionNumber ?? '') : '',
-  chequeNumber: p.method === 'Cheque' ? (p.chequeNumber ?? '') : '',
+  transactionNumber: ['Bank', 'Online', 'Card'].includes(p.method) ? (p.transactionNumber ?? '') : '',
 });
 
 /* -------------------------------------------------------------------------- */
@@ -101,29 +100,17 @@ const paymentShape = {
   transactionNumber: z
     .string()
     .trim()
-    .max(60, { error: 'Transaction number is too long' })
-    .default(''),
-  chequeNumber: z
-    .string()
-    .trim()
-    .max(60, { error: 'Cheque number is too long' })
+    .max(60, { error: 'Reference number is too long' })
     .default(''),
 };
 
 /** Rules that look only at the payment itself. */
 const checkPaymentRules = (p, ctx) => {
-  if (p.method === 'Bank' && !p.transactionNumber) {
+  if (['Bank', 'Online'].includes(p.method) && !p.transactionNumber) {
     ctx.addIssue({
       code: 'custom',
       path: ['transactionNumber'],
-      message: 'Transaction number is required for bank payments',
-    });
-  }
-  if (p.method === 'Cheque' && !p.chequeNumber) {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['chequeNumber'],
-      message: 'Cheque number is required for cheque payments',
+      message: `Reference number is required for ${p.method} payments`,
     });
   }
   if (isDate(p.date) && p.date > getTodayISO()) {

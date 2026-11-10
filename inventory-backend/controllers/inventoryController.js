@@ -78,7 +78,7 @@ export const getStockByCategory = async (req, res) => {
 /* -------------------------------------------------------------------------- */
 
 export const createInventoryItem = async (req, res) => {
-  const { category, quantity, unit, stockInPrice, date, description } = req.body;
+  const { category, quantity, unit, stockInPrice, date, description, paymentMethod, transactionNumber } = req.body;
 
   try {
     // The category must exist and be Active. Use its stored spelling.
@@ -102,6 +102,8 @@ export const createInventoryItem = async (req, res) => {
               stockInPrice,
               date,
               description,
+              paymentMethod,
+              transactionNumber: paymentMethod === "Cash" ? "" : transactionNumber,
               currentStock: quantity,
             },
           ],
@@ -137,6 +139,8 @@ export const createInventoryItem = async (req, res) => {
           description: `${cat.name}, ${quantity} ${unit} at ${stockInPrice}`,
           reference,
           inventoryItem: created._id,
+          method: paymentMethod,
+          transactionNumber: paymentMethod === "Cash" ? "" : transactionNumber,
           createdBy: req.user?._id,
         });
 
@@ -229,6 +233,8 @@ export const updateInventoryItem = async (req, res) => {
             description: `${item.category} stock entry edited`,
             reference: ledger?.reference ?? "",
             inventoryItem: item._id,
+            method: item.paymentMethod ?? "",
+            transactionNumber: item.transactionNumber ?? "",
             createdBy: req.user?._id,
           });
         }
@@ -306,6 +312,8 @@ export const deleteInventoryItem = async (req, res) => {
           description: `${item.category} stock entry deleted`,
           reference: ledger?.reference ?? "",
           inventoryItem: item._id,
+          method: item.paymentMethod ?? "",
+          transactionNumber: item.transactionNumber ?? "",
           createdBy: req.user?._id,
         });
 

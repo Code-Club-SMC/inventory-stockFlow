@@ -132,6 +132,7 @@ export async function createInvoice(req, res) {
             invoice: created._id,
             paymentId: String(first._id),
             method: first.method,
+            transactionNumber: first.transactionNumber,
             createdBy: req.user?._id,
           });
         }
@@ -291,6 +292,7 @@ export async function addPayment(req, res) {
           invoice: invoice._id,
           paymentId: String(added._id),
           method: added.method,
+          transactionNumber: added.transactionNumber,
           createdBy: req.user?._id,
         });
 
@@ -347,6 +349,7 @@ export async function removePayment(req, res) {
         }
         const amount = payment.amount;
         const method = payment.method;
+        const transactionNumber = payment.transactionNumber;
 
         invoice.removePayment(req.params.paymentId, dueDate);
         // If the invoice becomes unpaid with no due date, the model rejects it (400, field: dueDate).
@@ -363,6 +366,7 @@ export async function removePayment(req, res) {
           invoice: invoice._id,
           paymentId: String(req.params.paymentId),
           method,
+          transactionNumber,
           createdBy: req.user?._id,
         });
 

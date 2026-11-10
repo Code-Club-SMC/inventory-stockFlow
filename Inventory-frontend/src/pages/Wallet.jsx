@@ -196,6 +196,8 @@ export default function WalletPage() {
     const columns = [
         { key: 'date', header: 'Date', render: (e) => formatDate(e.date) },
         { key: 'type', header: 'Type', render: (e) => <Badge variant={typeVariant[e.type] ?? 'neutral'}>{e.type}</Badge> },
+        { key: 'method', header: 'Method', render: (e) => <span className="text-slate-600">{e.method || 'Not recorded'}</span> },
+        { key: 'transactionNumber', header: 'Payment Reference', render: (e) => <span className="font-mono text-xs text-slate-600">{e.transactionNumber || 'Not provided'}</span> },
         {
             key: 'description',
             header: 'Description',

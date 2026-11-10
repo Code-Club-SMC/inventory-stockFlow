@@ -1,6 +1,6 @@
 import express from "express";
 import { validate } from "../middleware/validate.js";
-import { inventoryFormSchema } from "../validations/inventorySchema.js";
+import { inventoryCreateSchema, inventoryUpdateSchema } from "../validations/inventorySchema.js";
 import {
   getInventory,
   getInventoryItem,
@@ -23,8 +23,8 @@ router.get(
 ); // must stay above "/:id"
 router.get("/", requireAuth, requirePermission("inventory", "view"), getInventory);
 router.get("/:id", requireAuth, requirePermission("inventory", "view"), getInventoryItem);
-router.post("/", requireAuth, requirePermission("inventory", "create"), validate(inventoryFormSchema), createInventoryItem);
-router.put("/:id", requireAuth, requirePermission("inventory", "edit"), validate(inventoryFormSchema), updateInventoryItem);
+router.post("/", requireAuth, requirePermission("inventory", "create"), validate(inventoryCreateSchema), createInventoryItem);
+router.put("/:id", requireAuth, requirePermission("inventory", "edit"), validate(inventoryUpdateSchema), updateInventoryItem);
 router.delete("/:id", requireAuth, requirePermission("inventory", "delete"), deleteInventoryItem);
 
 export default router;

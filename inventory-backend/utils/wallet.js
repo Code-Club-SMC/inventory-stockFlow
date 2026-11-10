@@ -21,6 +21,7 @@ export async function recordWalletEntry({
   invoice,
   paymentId = "",
   method = "",
+  transactionNumber = "",
   createdBy,
 }) {
   const value = round2(amount);
@@ -46,6 +47,7 @@ export async function recordWalletEntry({
         invoice,
         paymentId,
         method,
+        transactionNumber,
         createdBy,
       },
     ],

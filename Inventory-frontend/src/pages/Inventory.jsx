@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Pencil, Trash2, Boxes, AlertTriangle, Loader } from 'lucide-react';
-import { inventoryFormSchema, LOW_STOCK_LIMIT } from '@/validations/inventorySchema.js';
+import { inventoryCreateSchema, inventoryUpdateSchema, LOW_STOCK_LIMIT } from '@/validations/inventorySchema.js';
+import { PAYMENT_METHODS } from '@/validations/invoice.js';
 import Card from '@/components/ui/Card';
 import { usePermissions } from '@/hooks/usePermissions';
 import Button from '@/components/ui/Button';
@@ -33,6 +34,8 @@ const getEmptyForm = () => ({
     stockInPrice: '',
     date: todayISO(),
     description: '',
+    paymentMethod: 'Cash',
+    transactionNumber: '',
 });
 
 /* --------------------------- Add / edit modal --------------------------- */
@@ -51,11 +54,12 @@ function StockFormModal({ open, onClose, item, categories }) {
         watch,
         formState: { errors },
     } = useForm({
-        resolver: zodResolver(inventoryFormSchema),
+        resolver: zodResolver(isEdit ? inventoryUpdateSchema : inventoryCreateSchema),
         defaultValues: getEmptyForm(),
     });
 
     const total = round2((Number(watch('quantity')) || 0) * (Number(watch('stockInPrice')) || 0));
+    const paymentMethod = watch('paymentMethod');
 
     // Fresh form every time the modal opens or a different entry is picked.
     useEffect(() => {
@@ -69,6 +73,8 @@ function StockFormModal({ open, onClose, item, categories }) {
                       stockInPrice: String(item.stockInPrice),
                       date: item.date,
                       description: item.description ?? '',
+                      paymentMethod: item.paymentMethod ?? '',
+                      transactionNumber: item.transactionNumber ?? '',
                   }
                 : getEmptyForm(),
         );
@@ -176,6 +182,36 @@ function StockFormModal({ open, onClose, item, categories }) {
                     </div>
 
                     <Controller
+                        name="paymentMethod"
+                        control={control}
+                        render={({ field: { ref, ...field } }) => (
+                            <Select
+                                label="Payment Method"
+                                required={!isEdit}
+                                options={[...(isEdit && !paymentMethod ? [{ value: '', label: 'Not recorded' }] : []), ...PAYMENT_METHODS.map((m) => ({ value: m, label: m }))]}
+                                disabled={isEdit}
+                                {...field}
+                                error={errors.paymentMethod?.message}
+                            />
+                        )}
+                    />
+                    {paymentMethod && ['Bank', 'Online', 'Card'].includes(paymentMethod) && (
+                        <Controller
+                            name="transactionNumber"
+                            control={control}
+                            render={({ field: { ref, ...field } }) => (
+                                <Input
+                                    label="Reference Number"
+                                    required={paymentMethod !== 'Card'}
+                                    disabled={isEdit}
+                                    placeholder={paymentMethod === 'Card' ? 'Optional card receipt reference' : 'Payment reference number'}
+                                    {...field}
+                                    error={errors.transactionNumber?.message}
+                                />
+                            )}
+                        />
+                    )}
+                    <Controller
                         name="date"
                         control={control}
                         render={({ field: { ref, ...field } }) => (
@@ -263,6 +299,7 @@ export default function Inventory() {
         { key: 'unit', header: 'Unit', render: (i) => <span className="text-slate-500">{i.unit}</span> },
         { key: 'stockInPrice', header: 'Unit-Price', render: (i) => formatCurrency(i.stockInPrice) },
         { key: 'Total', header: 'Total', render: (i) => formatCurrency(i?.totalPrice??0) },
+        { key: 'paymentMethod', header: 'Payment', render: (i) => <span className="text-slate-600">{i.paymentMethod || 'Not recorded'}</span> },
         { key: 'date', header: 'Date', render: (i) => formatDate(i.date) },
         {
             key: 'description',

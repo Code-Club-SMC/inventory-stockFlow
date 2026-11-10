@@ -29,23 +29,19 @@ const paymentMongoSchema = new Schema(
   {
     amount: { type: Number, required: true, min: 0.01 },
     date: { type: String, required: true }, // YYYY-MM-DD (Qatar date)
-    method: { type: String, enum: PAYMENT_METHODS, default: 'Cash' },
+    method: { type: String, enum: [...PAYMENT_METHODS, 'Cheque'], default: 'Cash' },
     transactionNumber: { type: String, default: '', trim: true, maxlength: 60 },
-    chequeNumber: { type: String, default: '', trim: true, maxlength: 60 },
+    chequeNumber: { type: String, default: '', trim: true, maxlength: 60 }, // retained for legacy invoice history
   },
   { _id: true, timestamps: { createdAt: true, updatedAt: false } }
 );
 
-// Backstop for Zod: Bank needs a transaction number, Cheque needs a cheque number.
+// Backstop for Zod: Bank and Online need a reference number.
 paymentMongoSchema.pre('validate', function () {
-  if (this.method === 'Bank' && !this.transactionNumber) {
-    this.invalidate('transactionNumber', 'Transaction number is required for bank payments');
+  if (['Bank', 'Online'].includes(this.method) && !this.transactionNumber) {
+    this.invalidate('transactionNumber', `Reference number is required for ${this.method} payments`);
   }
-  if (this.method === 'Cheque' && !this.chequeNumber) {
-    this.invalidate('chequeNumber', 'Cheque number is required for cheque payments');
-  }
-  if (this.method !== 'Bank') this.transactionNumber = '';
-  if (this.method !== 'Cheque') this.chequeNumber = '';
+  if (!['Bank', 'Online', 'Card'].includes(this.method)) this.transactionNumber = '';
 });
 
 /* -------------------------------------------------------------------------- */
